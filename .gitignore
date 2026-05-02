@@ -7,6 +7,9 @@ target/
 .vscode/
 *.log
 
+# Frontend
+frontend/node_modules/
+
 # Local environment overrides
 .env
 application-local.properties

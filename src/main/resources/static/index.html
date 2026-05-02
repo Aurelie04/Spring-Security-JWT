@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Load the UI</title>
+    <style>
+      body {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        margin: 0;
+        padding: 64px;
+        background: radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.2), transparent 45%);
+        color: #0f172a;
+      }
+      main {
+        max-width: 640px;
+        margin: auto;
+        padding: 32px;
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        border-radius: 16px;
+      }
+      code {
+        background: rgba(15, 23, 42, 0.05);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+      li + li {
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Waiting for your React bundle</h1>
+      <p>You are hitting the backend at port 8080 without a frontend build deployed here yet.</p>
+      <ul>
+        <li>
+          Preferred for development:<br /><code>cd frontend && npm install && npm run dev</code> → open{' '}
+          <code>http://localhost:5173</code>.
+        </li>
+        <li>
+          Packaging static assets:<br /><code>cd frontend && npm install && npm run build</code> then restart Spring Boot —
+          visit <code>http://localhost:8080</code>.
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

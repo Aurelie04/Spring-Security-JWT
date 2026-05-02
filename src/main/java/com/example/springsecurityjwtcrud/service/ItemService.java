@@ -1,10 +1,10 @@
 package com.example.springsecurityjwtcrud.service;
 
+import com.example.springsecurityjwtcrud.model.AppUser;
 import com.example.springsecurityjwtcrud.model.Item;
 import com.example.springsecurityjwtcrud.repository.ItemRepository;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ItemService {
@@ -15,11 +15,13 @@ public class ItemService {
         this.itemRepository = itemRepository;
     }
 
-    public Item create(Item item) {
+    public Item create(AppUser owner, Item item) {
+        item.setId(null);
+        item.setOwner(owner);
         return itemRepository.save(item);
     }
 
-    public List<Item> findAll() {
-        return itemRepository.findAll();
+    public List<Item> findAllForOwner(AppUser owner) {
+        return itemRepository.findByOwner_IdOrderByIdAsc(owner.getId());
     }
 }
