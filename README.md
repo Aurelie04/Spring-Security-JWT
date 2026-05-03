@@ -7,7 +7,9 @@ The bundled React SPA lives in `/frontend`; during development Vite proxies `/ap
 
 - `POST /api/auth/register` – persist a new account (stored in MySQL via JPA).
 - `POST /api/auth/login` – validates credentials against the stored hash and returns a JWT.
-- `GET/POST /api/items` – CRUD payloads owned by whichever user authenticated the bearer token (`items.owner_id`).
+- `GET/POST /api/items` – list and create rows for the authenticated user (`items.owner_id`).
+- `PUT /api/items/{id}` – update a row you own (otherwise **404**).
+- `DELETE /api/items/{id}` – delete a row you own (**204 No Content**); otherwise **404**.
 - SPA-friendly forwarding for `/login`, `/register`, and `/dashboard` once the frontend bundle sits in `src/main/resources/static/`.
 
 ## Tech stack
@@ -95,6 +97,23 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
 
 curl -H "Authorization: Bearer ${TOKEN}" \
      http://localhost:8080/api/items
+```
+
+Update item `1` (name required; description optional or empty string):
+
+```bash
+curl -X PUT http://localhost:8080/api/items/1 \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Updated name","description":"New notes"}'
+```
+
+Delete item `1`:
+
+```bash
+curl -X DELETE http://localhost:8080/api/items/1 \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -w "\nHTTP %{http_code}\n"
 ```
 
 ## Git setup shortcuts

@@ -324,6 +324,40 @@ code,
   padding-bottom: 12px;
 }
 
+.item-row {
+  list-style: none;
+}
+
+.item-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.item-edit-form {
+  padding-top: 4px;
+}
+
+.btn.danger-outline {
+  border: 1px solid rgba(220, 38, 38, 0.45);
+  color: #b91c1c;
+  background: rgba(254, 242, 242, 0.8);
+}
+
+.btn.danger-outline:hover:not(:disabled) {
+  border-color: #b91c1c;
+  background: rgba(254, 226, 226, 0.95);
+}
+
 .item-title {
   font-weight: 600;
 }

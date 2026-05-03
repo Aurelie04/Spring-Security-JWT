@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { createItem, fetchItems } from '../api/items.js';
+import { createItem, deleteItem, fetchItems, updateItem } from '../api/items.js';
 
 export default function DashboardPage() {
   const { token, username, logout } = useAuth();
@@ -12,12 +12,20 @@ export default function DashboardPage() {
   const [actionBusy, setActionBusy] = useState(false);
   const [banner, setBanner] = useState({ type: '', text: '' });
 
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
+  async function reload() {
+    const data = await fetchItems(token);
+    setItems(data);
+  }
+
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const data = await fetchItems(token);
-        setItems(data);
+        await reload();
         setBanner({ type: '', text: '' });
       } catch (err) {
         setBanner({ type: 'error', text: err.message || 'Unable to load items.' });
@@ -37,6 +45,50 @@ export default function DashboardPage() {
       setName('');
       setDescription('');
       setBanner({ type: 'success', text: 'Row saved straight to MySQL.' });
+    } catch (err) {
+      setBanner({ type: 'error', text: err.message });
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  function startEdit(item) {
+    setEditingId(item.id);
+    setEditName(item.name ?? '');
+    setEditDesc(item.description ?? '');
+    setBanner({ type: '', text: '' });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditName('');
+    setEditDesc('');
+  }
+
+  async function handleSaveEdit(event) {
+    event.preventDefault();
+    if (editingId == null) return;
+    try {
+      setActionBusy(true);
+      const updated = await updateItem(token, editingId, { name: editName, description: editDesc });
+      setItems((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
+      cancelEdit();
+      setBanner({ type: 'success', text: 'Item updated.' });
+    } catch (err) {
+      setBanner({ type: 'error', text: err.message });
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm('Delete this item? This removes it from the database.')) return;
+    try {
+      setActionBusy(true);
+      await deleteItem(token, id);
+      setItems((prev) => prev.filter((row) => row.id !== id));
+      if (editingId === id) cancelEdit();
+      setBanner({ type: 'success', text: 'Item deleted.' });
     } catch (err) {
       setBanner({ type: 'error', text: err.message });
     } finally {
@@ -98,9 +150,44 @@ export default function DashboardPage() {
           ) : (
             <ul className="item-feed">
               {items.map((item) => (
-                <li key={item.id}>
-                  <p className="item-title">{item.name}</p>
-                  {item.description ? <p className="muted item-desc">{item.description}</p> : null}
+                <li key={item.id} className="item-row">
+                  {editingId === item.id ? (
+                    <form className="form item-edit-form" onSubmit={handleSaveEdit}>
+                      <label className="field">
+                        <span>Name</span>
+                        <input required value={editName} onChange={(e) => setEditName(e.target.value)} />
+                      </label>
+                      <label className="field">
+                        <span>Notes</span>
+                        <textarea rows={3} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+                      </label>
+                      <div className="item-actions">
+                        <button type="submit" disabled={actionBusy} className="btn primary small">
+                          {actionBusy ? 'Saving…' : 'Save'}
+                        </button>
+                        <button type="button" disabled={actionBusy} className="btn ghost small" onClick={cancelEdit}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="item-row-head">
+                        <div>
+                          <p className="item-title">{item.name}</p>
+                          {item.description ? <p className="muted item-desc">{item.description}</p> : null}
+                        </div>
+                        <div className="item-actions">
+                          <button type="button" className="btn ghost small" disabled={actionBusy} onClick={() => startEdit(item)}>
+                            Edit
+                          </button>
+                          <button type="button" className="btn danger-outline small" disabled={actionBusy} onClick={() => handleDelete(item.id)}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
