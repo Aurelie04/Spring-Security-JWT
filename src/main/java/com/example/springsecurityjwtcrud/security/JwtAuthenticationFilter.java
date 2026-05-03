@@ -1,10 +1,13 @@
 package com.example.springsecurityjwtcrud.security;
 
+import com.example.springsecurityjwtcrud.dto.ErrorBody;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,10 +23,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthUserDetailsService authUserDetailsService;
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, AuthUserDetailsService authUserDetailsService) {
+    public JwtAuthenticationFilter(
+            JwtTokenProvider jwtTokenProvider,
+            AuthUserDetailsService authUserDetailsService,
+            ObjectMapper objectMapper) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.authUserDetailsService = authUserDetailsService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -38,22 +46,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        String token = header.substring(PREFIX.length()).trim();
+        if (token.isEmpty()) {
+            replyUnauthorized(response);
+            return;
+        }
+
         try {
-            String token = header.substring(PREFIX.length());
             String username = jwtTokenProvider.extractUsername(token);
 
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails details = authUserDetailsService.loadUserByUsername(username);
-                if (jwtTokenProvider.isTokenValid(token, details)) {
-                    var auth = new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                if (!jwtTokenProvider.isTokenValid(token, details)) {
+                    replyUnauthorized(response);
+                    return;
                 }
+
+                var auth = new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
-        } catch (Exception ignored) {
-            // malformed / expired JWT -> leave anonymous; downstream returns 403 on protected endpoints
+        } catch (Exception e) {
+            replyUnauthorized(response);
+            return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void replyUnauthorized(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(), ErrorBody.simple(401, "Invalid or expired token"));
     }
 }

@@ -33,9 +33,12 @@ The bundled React SPA lives in `/frontend`; during development Vite proxies `/ap
 
 For workstation convenience you can drop credentials into **`src/main/resources/application-local.properties` (already gitignored)** and run Boot with `-Dspring-boot.run.profiles=local`.
 
-| Secret | Notes |
-|:-------|:------|
-| `JWT_SECRET` | Overrides the HS256 signing key (recommended for production — must be sufficiently long ASCII / bytes). |
+| Secret / claim | Notes |
+|:---------------|:------|
+| `JWT_SECRET` | HS256 signing key — **at least 32 bytes**; the app fails fast on startup if shorter. |
+| `JWT_ISSUER` | Optional `iss` claim (default `spring-security-jwt-crud`); must match when validating tokens. |
+
+Access tokens are **stateless JWTs** (`Authorization: Bearer …`) with `sub` (username), `iss`, `uid` (database user id), `iat`, and `exp`. Login/register responses include `token`, `tokenType` (`Bearer`), and `expiresIn` (seconds).
 
 ### Schema migration tips
 

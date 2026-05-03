@@ -5,6 +5,7 @@ import com.example.springsecurityjwtcrud.dto.LoginRequest;
 import com.example.springsecurityjwtcrud.dto.RegisterRequest;
 import com.example.springsecurityjwtcrud.model.AppUser;
 import com.example.springsecurityjwtcrud.repository.UserRepository;
+import com.example.springsecurityjwtcrud.security.AppJwtProperties;
 import com.example.springsecurityjwtcrud.security.AuthUserDetails;
 import com.example.springsecurityjwtcrud.security.JwtTokenProvider;
 import java.util.Locale;
@@ -23,16 +24,19 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AppJwtProperties jwtProperties;
     private final AuthenticationManager authenticationManager;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
+            AppJwtProperties jwtProperties,
             AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.jwtProperties = jwtProperties;
         this.authenticationManager = authenticationManager;
     }
 
@@ -57,7 +61,7 @@ public class AuthService {
         AppUser saved = userRepository.save(user);
         AuthUserDetails details = new AuthUserDetails(saved);
         String token = jwtTokenProvider.generateToken(details);
-        return new AuthResponse(token, saved.getUsername(), saved.getEmail());
+        return authResponse(token, saved.getUsername(), saved.getEmail());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -69,7 +73,7 @@ public class AuthService {
             AuthUserDetails details = (AuthUserDetails) auth.getPrincipal();
             AppUser u = details.getUser();
             String token = jwtTokenProvider.generateToken(details);
-            return new AuthResponse(token, u.getUsername(), u.getEmail());
+            return authResponse(token, u.getUsername(), u.getEmail());
         } catch (BadCredentialsException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid username or password");
         }
@@ -81,5 +85,10 @@ public class AuthService {
 
     private static ResponseStatusException requestValidation(String message) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+
+    private AuthResponse authResponse(String token, String username, String email) {
+        long expiresInSeconds = Math.max(1L, jwtProperties.getExpirationMs() / 1000L);
+        return new AuthResponse(token, "Bearer", expiresInSeconds, username, email);
     }
 }

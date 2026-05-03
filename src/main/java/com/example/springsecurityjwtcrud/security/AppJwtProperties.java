@@ -12,6 +12,9 @@ public class AppJwtProperties {
 
     private long expirationMs = 86400000L;
 
+    /** Issuer (`iss`) claim — validated on every request. */
+    private String issuer = "spring-security-jwt-crud";
+
     public String getSecret() {
         return secret;
     }
@@ -26,5 +29,13 @@ public class AppJwtProperties {
 
     public void setExpirationMs(long expirationMs) {
         this.expirationMs = expirationMs;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 }
